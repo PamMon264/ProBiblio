@@ -91,6 +91,61 @@ class Biblioteca:
         self.alumnos_collection.insert_one(alumno)
         print("Alumno agregado y libro prestado con éxito.")
 
+    def asignar_libro_a_alumno(self):
+        # Mostrar la lista de alumnos
+        lista_alumnos = list(self.alumnos_collection.find())
+
+        if not lista_alumnos:
+            print("No hay alumnos registrados en el sistema.")
+            return
+
+        print("Lista de alumnos:")
+        for i, alumno in enumerate(lista_alumnos, 1):
+            print(f"{i}. {alumno['nombre']} {alumno['apellido']} - Número de control: {alumno['numero_control']}")
+
+        try:
+            eleccion_alumno = int(input("Seleccione el alumno (número): "))
+            if 1 <= eleccion_alumno <= len(lista_alumnos):
+                alumno_seleccionado = lista_alumnos[eleccion_alumno - 1]
+            else:
+                print("Selección inválida. No se pudo obtener información del alumno seleccionado.")
+                return
+        except ValueError:
+            print("Selección inválida. No se pudo obtener información del alumno seleccionado.")
+            return
+
+        # Mostrar la lista de libros disponibles
+        lista_libros = list(self.libros_collection.find({}, {"nombre": 1}))
+
+        if not lista_libros:
+            print("No hay libros disponibles en la biblioteca.")
+            return
+
+        print("Lista de libros disponibles:")
+        for i, libro in enumerate(lista_libros, 1):
+            print(f"{i}. {libro['nombre']}")
+
+        try:
+            eleccion_libro = int(input("Seleccione el libro (número): "))
+            if 1 <= eleccion_libro <= len(lista_libros):
+                libro_seleccionado = lista_libros[eleccion_libro - 1]
+            else:
+                print("Selección inválida. No se pudo obtener información del libro seleccionado.")
+                return
+        except ValueError:
+            print("Selección inválida. No se pudo obtener información del libro seleccionado.")
+            return
+
+        categoria_libro = libro_seleccionado.get("categoria", "Otra")
+
+        # Actualizar el documento del alumno con el nuevo libro prestado
+        self.alumnos_collection.update_one(
+            {"_id": alumno_seleccionado["_id"]},
+            {"$set": {"libro_prestado": {"nombre": libro_seleccionado["nombre"], "categoria": categoria_libro}}}
+        )
+
+        print(f"Libro '{libro_seleccionado['nombre']}' asignado al alumno '{alumno_seleccionado['nombre']} {alumno_seleccionado['apellido']}' con éxito.")
+
    
 
 
@@ -290,52 +345,57 @@ class Biblioteca:
         self.client.close()
         exit()
 
+    def mostrar_menu_principal(self):
+        while True:
+            print("\nMenú Principal:")
+            print("A) Ingresar libro")
+            print("B) Agregar alumno y prestar libro")
+            print("C) Consultar libros")
+            print("D) Mostrar libros para modificar")
+            print("E) Eliminar libro")
+            print("F) Consultar alumnos")
+            print("G) Modificar alumno")
+            print("H) Eliminar alumno")
+            print("I) Asignar libro a alumno")
+            print("J) Mostrar categorías")
+            print("X) Salir")
+
+            opcion = input("Seleccione una opción del menú: ").upper()
+
+            if opcion == 'A':
+                self.ingresar_libro()
+            elif opcion == 'B':
+                self.agregar_alumno_y_prestar_libro()
+            elif opcion == 'C':
+                self.consultar_libros()
+            elif opcion == 'D':
+                self.mostrar_libros_para_modificar()
+            elif opcion == 'E':
+                self.eliminar_libro()
+            elif opcion == 'F':
+                self.consultar_alumnos()
+            elif opcion == 'G':
+                self.modificar_alumno()
+            elif opcion == 'H':
+                self.eliminar_alumno()
+            elif opcion == 'I':
+                self.asignar_libro_a_alumno()
+            elif opcion == 'J':
+                self.mostrar_categorias()
+            elif opcion == 'X':
+                self.salir_del_sistema()
+            else:
+                print("Opción no válida. Inténtelo de nuevo.")
+
 def main():
     connection_string = "mongodb+srv://bdata:1234@biblioteca.j9zcdza.mongodb.net/"
     db_name = "BibliotecaBigData"
 
     biblioteca = Biblioteca(connection_string, db_name)
 
-    while True:
-        print("\nMenú Principal:")
-        print("A) Ingresar libro")
-        print("B) Agregar alumno y prestar libro")
-        print("C) Consultar libros")
-        print("D) Mostrar libros para modificar")
-        print("E) Eliminar libro")
-        print("F) Consultar alumnos")
-        print("G) Modificar alumno")
-        print("H) Eliminar alumno")
-        print("I) Mostrar categorías")
-        print("X) Salir")
-
-        opcion = input("Seleccione una opción del menú: ").upper()
-
-        if opcion == 'A':
-            biblioteca.ingresar_libro()
-        elif opcion == 'B':
-            biblioteca.agregar_alumno_y_prestar_libro()
-        elif opcion == 'C':
-            biblioteca.consultar_libros()
-        elif opcion == 'D':
-            biblioteca.mostrar_libros_para_modificar()
-        elif opcion == 'E':
-            biblioteca.eliminar_libro()
-        elif opcion == 'F':
-            biblioteca.consultar_alumnos()
-        elif opcion == 'G':
-            biblioteca.modificar_alumno()
-        elif opcion == 'H':
-            biblioteca.eliminar_alumno()
-        elif opcion == 'I':
-            biblioteca.mostrar_categorias()
-        elif opcion == 'X':
-            biblioteca.salir_del_sistema()
-        else:
-            print("Opción no válida. Inténtelo de nuevo.")
+    biblioteca.mostrar_menu_principal()
 
 if __name__ == "__main__":
     main()
-
     
 
